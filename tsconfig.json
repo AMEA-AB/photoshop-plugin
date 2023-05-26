@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "module": "CommonJS",
+    "target": "es5",
+    "allowJs": true,
+    "moduleResolution": "node",
+    // typeRoots override defaults, so be sure to include the implicit @types as well
+    "typeRoots": [
+      "node_modules/@types",
+      "node_modules/uxp-types",
+    ]
+  }
+}
