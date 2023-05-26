@@ -143,6 +143,7 @@ const createImageFromRow = (row: DataRow, templatesFolder: storage.Folder, expor
         .then((filename) => exportFolder.createFile(filename, { overwrite: true }))
         .then((exportFile) => core.executeAsModal(() => app.activeDocument.saveAs.png(exportFile as unknown as File).then(() => { }), { commandName: "Saving image" }))
         .then(() => console.log('exported', row['Order number']))
+        .then(() => core.executeAsModal(() =>app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES), { commandName: 'Closing file' }));
 
 
 async function showLayerNames() {
@@ -172,6 +173,7 @@ async function showLayerNames() {
             await createImageFromRow(row, templatesFolder, exportFolder);
             processed++;
         } catch (err) {
+            console.log('Error', err);
             await core.showAlert({message: `Error while processing ${row['Order number']}`});
         }
         console.log('Done', row['Order number']);
