@@ -7,7 +7,7 @@ Generate images from templates based on data from a xlsx-file
 In the plugin folder (that contains the `package.json` file), install the dependencies by running:
 
 ```shell
-yarn install
+yarn
 ```
 
 After that, you need to build the plugin's `dist/index.js` file (that the `index.html` loads) by running:
