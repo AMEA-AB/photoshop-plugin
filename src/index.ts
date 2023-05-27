@@ -13,6 +13,12 @@ interface DataRow {
     [key: string]: string;
 }
 
+let inputFile: storage.File | undefined;
+
+let exportFolder: storage.Folder | undefined;
+
+let templatesFolder: storage.Folder | undefined;
+
 const invertLayer = (layer: Layer, invert: boolean) => action.batchPlay(
     [
         {
@@ -147,24 +153,11 @@ const createImageFromRow = (row: DataRow, templatesFolder: storage.Folder, expor
 
 
 async function showLayerNames() {
-    // Get xlsx file
-    const file = await fs.getFileForOpening({ types: ['xlsx'], allowMultiple: false });
-    if (!file || Array.isArray(file)) {
-        return;
-    }
-
-    // Get export folder
-    const exportFolder = await fs.getFolder({ initialDomain: storage.domains.userDesktop });
-
-    const data = await file.read({ format: storage.formats.binary });
+    const data = await inputFile.read({ format: storage.formats.binary });
     const workbook = xlsx.read(data);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
     const rows = (xlsx.utils.sheet_to_json(worksheet) as DataRow[]).filter((row) => row['Template']);
-    console.log(rows);
-
-    const pluginFolder = await fs.getPluginFolder();
-    const templatesFolder = await pluginFolder.getEntry('templates') as unknown as storage.Folder;
 
     let processed = 0;
     for (const row of rows) {
@@ -181,4 +174,49 @@ async function showLayerNames() {
     await core.showAlert({message: `${processed} rows have been processed`});
 }
 
-document.getElementById('btnPopulate')?.addEventListener('click', showLayerNames);
+function updateGenerateButton() {
+    const valid = !!(inputFile && exportFolder && templatesFolder);
+    if(valid) {
+        document.getElementById('btnGenerate')?.removeAttribute('disabled');
+    } else {
+        document.getElementById('btnGenerate')?.setAttribute('disabled', "");
+    }
+}
+
+async function setInputFile() {
+    const file = await fs.getFileForOpening({ types: ['xlsx'], allowMultiple: false });
+    if (!file || Array.isArray(file)) {
+        await core.showAlert({message: 'Please select an input file'});
+        return;
+    }
+    inputFile = file;
+    updateGenerateButton();
+}
+
+async function setExportFolder() {
+    const folder = await fs.getFolder({ initialDomain: storage.domains.userDesktop });
+    if (!folder) {
+        await core.showAlert({message: 'Please select a folder for export'});
+        return;
+    }
+    exportFolder = folder;
+    updateGenerateButton();
+}
+
+async function setTemplatesFolder() {
+    const folder = await fs.getFolder({ initialDomain: storage.domains.userDesktop });
+    if (!folder) {
+        await core.showAlert({message: 'Please select a folder with templates'});
+        return;
+    }
+    templatesFolder = folder;
+    updateGenerateButton();
+}
+
+document.getElementById('btnInput')?.addEventListener('click', setInputFile);
+
+document.getElementById('btnOutput')?.addEventListener('click', setExportFolder);
+
+document.getElementById('btnTemplates')?.addEventListener('click', setTemplatesFolder);
+
+document.getElementById('btnGenerate')?.addEventListener('click', showLayerNames);

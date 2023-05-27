@@ -18,20 +18,16 @@
       "type": "panel",
       "id": "vanilla",
       "minimumSize": {
-        "width": 230,
-        "height": 200
-      },
-      "maximumSize": {
-        "width": 2000,
-        "height": 2000
+        "width": 260,
+        "height": 330
       },
       "preferredDockedSize": {
-        "width": 230,
-        "height": 300
+        "width": 260,
+        "height": 330
       },
       "preferredFloatingSize": {
-        "width": 230,
-        "height": 300
+        "width": 260,
+        "height": 330
       },
       "icons": [
         {
@@ -68,7 +64,7 @@
         }
       ],
       "label": {
-        "default": "TypeScript Webpack Sample"
+        "default": "Generate outputs"
       }
     }
   ],
