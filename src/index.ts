@@ -96,19 +96,43 @@ const setText = (layer: Layer, text: string) => action.batchPlay(
     { modalBehavior: "execute" }
 );
 
-const fetchBuffer = (url: string) => fetch(url).then((response) => response.arrayBuffer());
+const fetchBuffer = (url: string) => fetch(url).then((response) => {
+    if(response.status !== 200) throw Error(`Could not download file from ${url}`);
+    return response.arrayBuffer()
+});
 
-const openTemplate = (templateName: string, templatesFolder: storage.Folder) =>
-    core.executeAsModal(
-        async () => {
-            const templateFile = await templatesFolder.getEntry(templateName);
-            if (!templateFile.isFile) throw Error('Path is not a file');
-            await app.open(templateFile as unknown as File);
-        }, { commandName: 'Opening file' }
-    );
+const getFileFromWeb = async (url: string, filename: string) => {
+    const tempFolder = await fs.getTemporaryFolder();
+    const file = await tempFolder.createFile(filename, { overwrite: true });
+    console.log('Downloading file', url);
+    const buffer = await fetchBuffer(url);
+    file.write(buffer, { format: storage.formats.utf8 });
+    return file;
+}
 
-const populateDocumentFromRow = (row: DataRow, templatesFolder: storage.Folder) =>
-    openTemplate(row['Template'], templatesFolder).then(async () => {
+const getTemplateFile = async (templateName: string) => {
+    let file: storage.File | undefined;
+    if(templatesFolder) {
+        file = await templatesFolder.getEntry(templateName) as storage.File;
+    } else{
+        const encodedTemplateName = encodeURIComponent(templateName);
+        const templateFileURL = `${process.env.TEMPLATES_FOLDER_URL}/${encodedTemplateName}`;
+        file = await getFileFromWeb(templateFileURL, templateName)
+    }
+    if (!file || !file.isFile) throw Error(`Could not find template '${templateName}'`);
+    return file;
+}
+
+const openTemplate = (templateName: string) => {
+    return core.executeAsModal(async () => {
+        const templateFile = await getTemplateFile(templateName);
+        const document = await app.open(templateFile as unknown as File)
+        console.log('Opened template', document);
+    }, { commandName: 'Opening file' });
+}
+
+const populateDocumentFromRow = (row: DataRow) =>
+    openTemplate(row['Template']).then(async () => {
         for (const columnName in row) {
             const layer = app.activeDocument.layers.getByName(columnName);
             if (!layer) continue;
@@ -119,13 +143,7 @@ const populateDocumentFromRow = (row: DataRow, templatesFolder: storage.Folder) 
             else if (layer.kind === LayerKind.SMARTOBJECT) {
                 const filenameRegex = /.*\/uploads\/(.*)/g;
                 const filename = filenameRegex.exec(row[columnName])[1];
-                await fs.getTemporaryFolder()
-                    .then((tempFolder) => tempFolder.createFile(filename, { overwrite: true }))
-                    .then(async (file) => {
-                        const buffer = await fetchBuffer((row[columnName]));
-                        file.write(buffer, { format: storage.formats.utf8 });
-                        return file;
-                    })
+                await getFileFromWeb(row[columnName], filename)
                     .then((file) => core.executeAsModal(() => {
                         console.log('Set image', columnName);
                         return setImage(layer, file).then(() => console.log('Image has been set', columnName));
@@ -143,8 +161,8 @@ const populateDocumentFromRow = (row: DataRow, templatesFolder: storage.Folder) 
 
     }).then(() => console.log('All layers populated for', row['Order number']));
 
-const createImageFromRow = (row: DataRow, templatesFolder: storage.Folder, exportFolder: storage.Folder) =>
-    populateDocumentFromRow(row, templatesFolder)
+const createImageFromRow = (row: DataRow) =>
+    populateDocumentFromRow(row)
         .then(() => `${row['Order number'].substring(1)} - ${row['Product']}.png`.replace('*', '-').replace('/', '-'))
         .then((filename) => exportFolder.createFile(filename, { overwrite: true }))
         .then((exportFile) => core.executeAsModal(() => app.activeDocument.saveAs.png(exportFile as unknown as File).then(() => { }), { commandName: "Saving image" }))
@@ -152,7 +170,7 @@ const createImageFromRow = (row: DataRow, templatesFolder: storage.Folder, expor
         .then(() => core.executeAsModal(() =>app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES), { commandName: 'Closing file' }));
 
 
-async function showLayerNames() {
+async function generate() {
     const data = await inputFile.read({ format: storage.formats.binary });
     const workbook = xlsx.read(data);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -163,10 +181,10 @@ async function showLayerNames() {
     for (const row of rows) {
         console.log('Start', row['Order number'], row['Template']);
         try {
-            await createImageFromRow(row, templatesFolder, exportFolder);
+            await createImageFromRow(row);
             processed++;
         } catch (err) {
-            console.log('Error', err);
+            console.error('Error', err);
             await core.showAlert({message: `Error while processing ${row['Order number']}`});
         }
         console.log('Done', row['Order number']);
@@ -175,7 +193,7 @@ async function showLayerNames() {
 }
 
 function updateGenerateButton() {
-    const valid = !!(inputFile && exportFolder && templatesFolder);
+    const valid = !!(inputFile && exportFolder);
     if(valid) {
         document.getElementById('btnGenerate')?.removeAttribute('disabled');
     } else {
@@ -219,4 +237,4 @@ document.getElementById('btnOutput')?.addEventListener('click', setExportFolder)
 
 document.getElementById('btnTemplates')?.addEventListener('click', setTemplatesFolder);
 
-document.getElementById('btnGenerate')?.addEventListener('click', showLayerNames);
+document.getElementById('btnGenerate')?.addEventListener('click', generate);
