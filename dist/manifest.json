@@ -19,15 +19,15 @@
       "id": "vanilla",
       "minimumSize": {
         "width": 260,
-        "height": 370
+        "height": 500
       },
       "preferredDockedSize": {
         "width": 260,
-        "height": 370
+        "height": 500
       },
       "preferredFloatingSize": {
         "width": 260,
-        "height": 370
+        "height": 500
       },
       "icons": [
         {

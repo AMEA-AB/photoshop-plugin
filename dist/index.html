@@ -36,6 +36,14 @@
         <sp-button variant="secondary" id="btnTemplates">Select local templates folder</sp-button>
         <p>Select a local folder if you don't want to use templates in the cloud.</p>
     </div>
+    <h4 class="spectrum-Heading--subtitle1">Output filetype</h4>
+    <sp-radio-group
+        name="export-type"
+        vertical
+    >
+        <sp-radio checked value="png" size="m">PNG</sp-radio>
+        <sp-radio value="psd" size="m">PSD</sp-radio>
+    </sp-radio-group>
     <sp-divider size="medium"></sp-divider>
     <sp-button variant="cta" disabled id="btnGenerate">Generate</sp-button>
 </sp-body>

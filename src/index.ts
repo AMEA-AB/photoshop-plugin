@@ -161,11 +161,18 @@ const populateDocumentFromRow = (row: DataRow) =>
 
     }).then(() => console.log('All layers populated for', row['Order number']));
 
+const exportDocument = (filename: string) => {
+    const switchElement = document.querySelector('sp-radio-group[name="export-type"]') as HTMLInputElement;
+    const filetype = switchElement.value as 'png' | 'psd';
+    filename += filetype;
+    return exportFolder.createFile(filename, { overwrite: true })
+        .then((exportFile) => core.executeAsModal(() => app.activeDocument.saveAs[filetype](exportFile as unknown as File), { commandName: 'Exporting file' }));
+}
+
 const createImageFromRow = (row: DataRow) =>
     populateDocumentFromRow(row)
-        .then(() => `${row['Order number'].substring(1)} - ${row['Product']}.png`.replace('*', '-').replace('/', '-'))
-        .then((filename) => exportFolder.createFile(filename, { overwrite: true }))
-        .then((exportFile) => core.executeAsModal(() => app.activeDocument.saveAs.png(exportFile as unknown as File).then(() => { }), { commandName: "Saving image" }))
+        .then(() => `${row['Order number'].substring(1)} - ${row['Product']}`.replace('*', '-').replace('/', '-'))
+        .then((filename) => exportDocument(filename))
         .then(() => console.log('exported', row['Order number']))
         .then(() => core.executeAsModal(() =>app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES), { commandName: 'Closing file' }));
 
