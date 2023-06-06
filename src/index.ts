@@ -2,7 +2,9 @@ import { storage } from 'uxp';
 import { app, core, action, constants } from "photoshop";
 import * as xlsx from 'xlsx';
 import { LayerKind } from 'photoshop/dom/Constants';
-import { Layer } from 'photoshop/dom/Layer';
+
+import type { Layer } from 'photoshop/dom/Layer';
+import type { Document } from 'photoshop/dom/Document';
 
 const fs = storage.localFileSystem;
 
@@ -37,6 +39,25 @@ const invertLayer = (layer: Layer, invert: boolean) => action.batchPlay(
                     ]
                 }
             ]
+        }
+    ],
+    { modalBehavior: "execute" }
+);
+
+const mirrorDocument = (document: Document) => action.batchPlay(
+    [
+        {
+            _obj: "flip",
+            _target: [
+                {
+                    _ref: "document",
+                    _id: document.id
+                }
+            ],
+            axis: {
+                _enum: "orientation",
+                _value: "horizontal"
+            }
         }
     ],
     { modalBehavior: "execute" }
@@ -97,7 +118,7 @@ const setText = (layer: Layer, text: string) => action.batchPlay(
 );
 
 const fetchBuffer = (url: string) => fetch(url).then((response) => {
-    if(response.status !== 200) throw Error(`Could not download file from ${url}`);
+    if (response.status !== 200) throw Error(`Could not download file from ${url}`);
     return response.arrayBuffer()
 });
 
@@ -112,9 +133,9 @@ const getFileFromWeb = async (url: string, filename: string) => {
 
 const getTemplateFile = async (templateName: string) => {
     let file: storage.File | undefined;
-    if(templatesFolder) {
+    if (templatesFolder) {
         file = await templatesFolder.getEntry(templateName) as storage.File;
-    } else{
+    } else {
         const encodedTemplateName = encodeURIComponent(templateName);
         const templateFileURL = `${process.env.TEMPLATES_FOLDER_URL}/${encodedTemplateName}`;
         file = await getFileFromWeb(templateFileURL, templateName)
@@ -154,10 +175,15 @@ const populateDocumentFromRow = (row: DataRow) =>
         }
         // Invert colors
         const invert = row['Invert'] === 'true';
-        for(const layer of app.activeDocument.layers) {
+        for (const layer of app.activeDocument.layers) {
             await core.executeAsModal(() => invertLayer(layer, invert), { commandName: 'Inverting colors' });
         }
 
+        // Mirror document
+        const mirror = row['Mirror'] === 'true';
+        if (mirror) {
+            await core.executeAsModal(() => mirrorDocument(app.activeDocument), { commandName: 'Mirroring document' });
+        }
 
     }).then(() => console.log('All layers populated for', row['Order number']));
 
@@ -174,7 +200,7 @@ const createImageFromRow = (row: DataRow) =>
         .then(() => `${row['Order number'].substring(1)} - ${row['Product']}`.replace('*', '-').replace('/', '-'))
         .then((filename) => exportDocument(filename))
         .then(() => console.log('exported', row['Order number']))
-        .then(() => core.executeAsModal(() =>app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES), { commandName: 'Closing file' }));
+        .then(() => core.executeAsModal(() => app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES), { commandName: 'Closing file' }));
 
 
 async function generate() {
@@ -192,16 +218,16 @@ async function generate() {
             processed++;
         } catch (err) {
             console.error('Error', err);
-            await core.showAlert({message: `Error while processing ${row['Order number']}`});
+            await core.showAlert({ message: `Error while processing ${row['Order number']}` });
         }
         console.log('Done', row['Order number']);
     }
-    await core.showAlert({message: `${processed} rows have been processed`});
+    await core.showAlert({ message: `${processed} rows have been processed` });
 }
 
 function updateGenerateButton() {
     const valid = !!(inputFile && exportFolder);
-    if(valid) {
+    if (valid) {
         document.getElementById('btnGenerate')?.removeAttribute('disabled');
     } else {
         document.getElementById('btnGenerate')?.setAttribute('disabled', "");
@@ -211,7 +237,7 @@ function updateGenerateButton() {
 async function setInputFile() {
     const file = await fs.getFileForOpening({ types: ['xlsx'], allowMultiple: false });
     if (!file || Array.isArray(file)) {
-        await core.showAlert({message: 'Please select an input file'});
+        await core.showAlert({ message: 'Please select an input file' });
         return;
     }
     inputFile = file;
@@ -221,7 +247,7 @@ async function setInputFile() {
 async function setExportFolder() {
     const folder = await fs.getFolder({ initialDomain: storage.domains.userDesktop });
     if (!folder) {
-        await core.showAlert({message: 'Please select a folder for export'});
+        await core.showAlert({ message: 'Please select a folder for export' });
         return;
     }
     exportFolder = folder;
@@ -231,7 +257,7 @@ async function setExportFolder() {
 async function setTemplatesFolder() {
     const folder = await fs.getFolder({ initialDomain: storage.domains.userDesktop });
     if (!folder) {
-        await core.showAlert({message: 'Please select a folder with templates'});
+        await core.showAlert({ message: 'Please select a folder with templates' });
         return;
     }
     templatesFolder = folder;
