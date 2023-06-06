@@ -1,6 +1,6 @@
 {
   "name": "amea-template-app",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Generate images from templates based on data from a xlsx-file",
   "author": "Albin Médoc",
   "license": "Apache-2.0",
