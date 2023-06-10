@@ -162,7 +162,7 @@ const populateDocumentFromRow = (row: DataRow) =>
                 continue;
             }
             else if (layer.kind === LayerKind.SMARTOBJECT) {
-                const filenameRegex = /.*\/uploads\/(.*)/g;
+                const filenameRegex = /.*\/(.*)/g;
                 const filename = filenameRegex.exec(row[columnName])[1];
                 await getFileFromWeb(row[columnName], filename)
                     .then((file) => core.executeAsModal(() => {
