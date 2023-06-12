@@ -217,10 +217,19 @@ const exportDocument = (filename: string) => {
         .then((exportFile) => core.executeAsModal(() => app.activeDocument.saveAs[filetype](exportFile as unknown as File), { commandName: 'Exporting file' }));
 }
 
+const replaceAll = (input: string, search: string, replace: string) => input.split(search).join(replace);
+
 const createImageFromRow = (row: DataRow) =>
     populateDocumentFromRow(row)
-        .then(() => `${row['Order number'].substring(1)} - ${row['Product']}`.replace('*', '-').replace('/', '-'))
-        .then((filename) => exportDocument(filename))
+        .then(() => {
+            const order_number = replaceAll(row['Order number'], '#', '');
+            const product = replaceAll(replaceAll(row['Product'], '*', '-'), '/', '-');
+            return `${order_number} - ${product}`
+        })
+        .then((filename) => {
+            console.log('exporting to ', filename);
+            return exportDocument(filename)
+        })
         .then(() => console.log('exported', row['Order number']))
         .then(() => core.executeAsModal(() => app.activeDocument.close(constants.SaveOptions.DONOTSAVECHANGES), { commandName: 'Closing file' }));
 
