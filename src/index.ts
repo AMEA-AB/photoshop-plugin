@@ -212,7 +212,6 @@ const populateDocumentFromRow = (row: DataRow) =>
 const exportDocument = (filename: string) => {
     const switchElement = document.querySelector('sp-radio-group[name="export-type"]') as HTMLInputElement;
     const filetype = switchElement.value as 'png' | 'psd';
-    filename += filetype;
     return exportFolder.createFile(filename, { overwrite: true })
         .then((exportFile) => core.executeAsModal(() => app.activeDocument.saveAs[filetype](exportFile as unknown as File), { commandName: 'Exporting file' }));
 }
