@@ -244,7 +244,7 @@ async function generate() {
         }
         console.log('Done', row['Order number']);
     }
-    await core.showAlert({ message: `${processed} rows have been processed` });
+    await core.showAlert({ message: `${processed} row${processed > 1 ? 's have' : ' has'}  been processed` });
 }
 
 function updateGenerateButton() {
