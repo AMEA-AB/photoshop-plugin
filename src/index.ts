@@ -44,6 +44,21 @@ const invertLayer = (layer: Layer, invert: boolean) => action.batchPlay(
     { modalBehavior: "execute" }
 );
 
+const hideLayer = (layer: Layer, hide: boolean) => action.batchPlay(
+    [
+        {
+            _obj: hide ? "hide" : "show",
+            null: [
+                {
+                    "_ref": "layer",
+                    "_id": layer.id
+                }
+            ]
+        }
+    ],
+    { modalBehavior: "execute" }
+);
+
 const mirrorDocument = (document: Document) => action.batchPlay(
     [
         {
@@ -98,24 +113,30 @@ const setImage = (layer: Layer, image: storage.File) => {
         });
 }
 
-const setText = (layer: Layer, text: string) => action.batchPlay(
-    [
-        {
-            "_obj": "set",
-            "_target": [
+const setText = (layer: Layer, text: string) => {
+    if(!!text) {
+        return action.batchPlay(
+            [
                 {
-                    "_ref": "layer",
-                    "_id": layer.id
+                    "_obj": "set",
+                    "_target": [
+                        {
+                            "_ref": "layer",
+                            "_id": layer.id
+                        }
+                    ],
+                    "to": {
+                        "_obj": "textLayer",
+                        "textKey": text,
+                    },
                 }
             ],
-            "to": {
-                "_obj": "textLayer",
-                "textKey": text,
-            },
-        }
-    ],
-    { modalBehavior: "execute" }
-);
+            { modalBehavior: "execute" }
+        );
+    } else {
+        return hideLayer(layer, true);
+    }
+}
 
 const fetchBuffer = (url: string) => fetch(url).then((response) => {
     if (response.status !== 200) throw Error(`Could not download file from ${url}`);
@@ -158,6 +179,7 @@ const populateDocumentFromRow = (row: DataRow) =>
             const layer = app.activeDocument.layers.getByName(columnName);
             if (!layer) continue;
             if (layer.kind === LayerKind.TEXT) {
+                console.log("Setting text", columnName, row[columnName], !!row[columnName]);
                 await core.executeAsModal(() => setText(layer, row[columnName]), { commandName: `Change text for '${columnName}'` });
                 continue;
             }
