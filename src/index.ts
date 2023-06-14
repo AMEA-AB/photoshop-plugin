@@ -1,10 +1,12 @@
 import { storage } from 'uxp';
-import { app, core, action, constants } from "photoshop";
+import { app, core, constants } from "photoshop";
 import * as xlsx from 'xlsx';
 import { LayerKind } from 'photoshop/dom/Constants';
 
-import type { Layer } from 'photoshop/dom/Layer';
-import type { Document } from 'photoshop/dom/Document';
+import PhotoshopService from '@services/photoshop-service';
+import DownloadService from '@services/download-service';
+import AmeaService from '@services/amea-service';
+import { replaceAllInString } from '@helpers';
 
 const fs = storage.localFileSystem;
 
@@ -21,153 +23,9 @@ let exportFolder: storage.Folder | undefined;
 
 let templatesFolder: storage.Folder | undefined;
 
-const invertLayer = (layer: Layer, invert: boolean) => action.batchPlay(
-    [
-        {
-            "_obj": invert ? "show" : "hide",
-            "null": [
-                {
-                    "_ref": [
-                        {
-                            "_ref": "solidFill",
-                            "_index": 1
-                        },
-                        {
-                            "_ref": "layer",
-                            "_id": layer.id
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    { modalBehavior: "execute" }
-);
-
-const hideLayer = (layer: Layer, hide: boolean) => action.batchPlay(
-    [
-        {
-            _obj: hide ? "hide" : "show",
-            null: [
-                {
-                    "_ref": "layer",
-                    "_id": layer.id
-                }
-            ]
-        }
-    ],
-    { modalBehavior: "execute" }
-);
-
-const mirrorDocument = (document: Document) => action.batchPlay(
-    [
-        {
-            _obj: "flip",
-            _target: [
-                {
-                    _ref: "document",
-                    _id: document.id
-                }
-            ],
-            axis: {
-                _enum: "orientation",
-                _value: "horizontal"
-            }
-        }
-    ],
-    { modalBehavior: "execute" }
-);
-
-const setImage = (layer: Layer, image: storage.File) => {
-    const targetWidth = layer.bounds.width;
-    const targetHeight = layer.bounds.height;
-
-    return action.batchPlay(
-        [
-            {
-                "_obj": "select",
-                "_target": [
-                    {
-                        "_ref": "layer",
-                        "_id": layer.id
-                    }
-                ],
-                "makeVisible": false,
-                "_isCommand": true
-            },
-            {
-                "_obj": "placedLayerReplaceContents",
-                "null": {
-                    "_path": fs.createSessionToken(image),
-                    "_kind": "local"
-                },
-                "_isCommand": true
-            }
-        ],
-        { modalBehavior: "execute" }
-    )
-        .then(() => {
-            const scaleX = (targetWidth / layer.bounds.width) * 100;
-            const scaleY = (targetHeight / layer.bounds.height) * 100;
-            return layer.scale(scaleX, scaleY, constants.AnchorPosition.MIDDLECENTER);
-        });
-}
-
-const setText = (layer: Layer, text: string) => {
-    if(!!text) {
-        return action.batchPlay(
-            [
-                {
-                    "_obj": "set",
-                    "_target": [
-                        {
-                            "_ref": "layer",
-                            "_id": layer.id
-                        }
-                    ],
-                    "to": {
-                        "_obj": "textLayer",
-                        "textKey": text,
-                    },
-                }
-            ],
-            { modalBehavior: "execute" }
-        );
-    } else {
-        return hideLayer(layer, true);
-    }
-}
-
-const fetchBuffer = (url: string) => fetch(url).then((response) => {
-    if (response.status !== 200) throw Error(`Could not download file from ${url}`);
-    return response.arrayBuffer()
-});
-
-const getFileFromWeb = async (url: string, filename: string) => {
-    const tempFolder = await fs.getTemporaryFolder();
-    const file = await tempFolder.createFile(filename, { overwrite: true });
-    console.log('Downloading file', url);
-    const buffer = await fetchBuffer(url);
-    file.write(buffer, { format: storage.formats.utf8 });
-    return file;
-}
-
-const getTemplateFile = async (templateName: string) => {
-    let file: storage.File | undefined;
-    if (templatesFolder) {
-        file = await templatesFolder.getEntry(templateName) as storage.File;
-    } else {
-        const encodedTemplateName = encodeURIComponent(templateName);
-        const templateFileURL = `${process.env.TEMPLATES_FOLDER_URL}/${encodedTemplateName}`;
-        file = await getFileFromWeb(templateFileURL, templateName)
-    }
-    if (!file || !file.isFile) throw Error(`Could not find template '${templateName}'`);
-    return file;
-}
-
 const openTemplate = (templateName: string) => {
     return core.executeAsModal(async () => {
-        const templateFile = await getTemplateFile(templateName);
+        const templateFile = await AmeaService.getTemplateFile(templateName, templatesFolder);
         const document = await app.open(templateFile as unknown as File)
         console.log('Opened template', document);
     }, { commandName: 'Opening file' });
@@ -180,16 +38,16 @@ const populateDocumentFromRow = (row: DataRow) =>
             if (!layer) continue;
             if (layer.kind === LayerKind.TEXT) {
                 console.log("Setting text", columnName, row[columnName], !!row[columnName]);
-                await core.executeAsModal(() => setText(layer, row[columnName]), { commandName: `Change text for '${columnName}'` });
+                await core.executeAsModal(() => PhotoshopService.setText(layer, row[columnName]), { commandName: `Change text for '${columnName}'` });
                 continue;
             }
             else if (layer.kind === LayerKind.SMARTOBJECT) {
                 const filenameRegex = /.*\/(.*)/g;
                 const filename = filenameRegex.exec(row[columnName])[1];
-                await getFileFromWeb(row[columnName], filename)
+                await DownloadService.getFileFromWeb(row[columnName], filename)
                     .then((file) => core.executeAsModal(() => {
                         console.log('Set image', columnName);
-                        return setImage(layer, file).then(() => console.log('Image has been set', columnName));
+                        return PhotoshopService.setImage(layer, file).then(() => console.log('Image has been set', columnName));
                     }
                         , { commandName: `Change image for '${columnName}'` })
                     )
@@ -198,13 +56,13 @@ const populateDocumentFromRow = (row: DataRow) =>
         // Invert colors
         const invert = row['Invert'] === 'true';
         for (const layer of app.activeDocument.layers) {
-            await core.executeAsModal(() => invertLayer(layer, invert), { commandName: 'Inverting colors' });
+            await core.executeAsModal(() => PhotoshopService.invertLayer(layer, invert), { commandName: 'Inverting colors' });
         }
 
         // Mirror document
         const mirror = row['Mirror'] === 'true';
         if (mirror) {
-            await core.executeAsModal(() => mirrorDocument(app.activeDocument), { commandName: 'Mirroring document' });
+            await core.executeAsModal(() => PhotoshopService.mirrorDocument(app.activeDocument), { commandName: 'Mirroring document' });
         }
 
     }).then(() => console.log('All layers populated for', row['Order number']));
@@ -216,13 +74,11 @@ const exportDocument = (filename: string) => {
         .then((exportFile) => core.executeAsModal(() => app.activeDocument.saveAs[filetype](exportFile as unknown as File), { commandName: 'Exporting file' }));
 }
 
-const replaceAll = (input: string, search: string, replace: string) => input.split(search).join(replace);
-
 const createImageFromRow = (row: DataRow) =>
     populateDocumentFromRow(row)
         .then(() => {
-            const order_number = replaceAll(row['Order number'], '#', '');
-            const product = replaceAll(replaceAll(row['Product'], '*', '-'), '/', '-');
+            const order_number = replaceAllInString(row['Order number'], '#', '');
+            const product = replaceAllInString(replaceAllInString(row['Product'], '*', '-'), '/', '-');
             return `${order_number} - ${product}`
         })
         .then((filename) => {

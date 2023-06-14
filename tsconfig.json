@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": "src",
     "outDir": "./dist/",
     "noImplicitAny": true,
     "module": "CommonJS",
@@ -10,6 +11,10 @@
     "typeRoots": [
       "node_modules/@types",
       "node_modules/uxp-types",
-    ]
+    ],
+    "paths": {
+      "@services/*": ["services/*"],
+      "@helpers": ["helpers"],
+    }
   }
 }

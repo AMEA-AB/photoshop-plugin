@@ -20,6 +20,10 @@ module.exports = {
     ],
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
+        alias: {
+            "@services": path.resolve(__dirname, "src/services/"),
+            "@helpers": path.resolve(__dirname, "src/helpers")
+        } 
     },
     externals: {
         photoshop: 'commonjs2 photoshop',
