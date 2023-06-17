@@ -4,4 +4,8 @@ declare module 'uxp' {
             createSessionToken(entry: Entry): string;
         }
     }
+    namespace versions {
+        const plugin: string;
+        const uxp: string;
+    }
 }

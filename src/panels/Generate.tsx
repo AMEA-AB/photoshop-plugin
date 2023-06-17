@@ -1,11 +1,12 @@
 // App imports
 import React from 'react';
+import { createRoot } from 'react-dom/client';
 import Spectrum from 'react-uxp-spectrum';
 
 import { storage } from 'uxp';
 import { core } from 'photoshop';
 
-import './App.css';
+import './Generate.css';
 import AmeaService from '@services/amea-service';
 import type { Document } from 'photoshop/dom/Document';
 import GenerateInputs from '@components/GenerateInputs';
@@ -37,12 +38,30 @@ export default function App() {
                 proccessedRows += 1;
             } catch (error) {
                 console.error(error);
-                await core.showAlert({ message: `Error while processing ${row['Order number']}` });
+                // await core.showAlert({ message: `Error while processing ${row['Order number']}` });
             }
         }
         executionContext.reportProgress({value: 1});
-        await core.showAlert({ message: `${proccessedRows} row${proccessedRows > 1 ? 's have' : ' has'}  been processed` });
+        showCompleteDialog(rows.length, proccessedRows);
     }, {commandName: 'Generate templates'});
+
+    const showCompleteDialog = (total: number, proccessed: number) => {
+        const dialogElement = document.createElement('dialog');
+        document.appendChild(dialogElement);
+        const root = createRoot(dialogElement);
+        root.render(
+          <div className="panel">
+            <Spectrum.Heading size="M">Generated</Spectrum.Heading>
+            {proccessed < total ? <Spectrum.Heading size="M">{total - proccessed} files failed</Spectrum.Heading> : undefined}
+            <Spectrum.Body>{proccessed} files got generated</Spectrum.Body>
+            <Spectrum.Detail>Great work. 🚀</Spectrum.Detail>
+          </div>
+        );
+        dialogElement.addEventListener('close', () => {
+          document.removeChild(dialogElement);
+        });
+        dialogElement.showModal();
+      };
 
     return (
         <div className="panel">

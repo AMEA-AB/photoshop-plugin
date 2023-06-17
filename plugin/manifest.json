@@ -15,8 +15,15 @@
     "manifestVersion": 4,
     "entrypoints": [
         {
+            "type": "command",
+            "id": "showAbout",
+            "label": {
+                "default": "About AMEA Plugin"
+            }
+        },
+        {
             "type": "panel",
-            "id": "react-typescript",
+            "id": "generate",
             "label": {
                 "default": "Generate templates"
             },
