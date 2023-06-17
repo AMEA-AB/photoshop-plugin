@@ -1,5 +1,4 @@
 import { createRoot } from 'react-dom/client';
-import type React from "react";
 
 interface MenuItem {
     id: string;

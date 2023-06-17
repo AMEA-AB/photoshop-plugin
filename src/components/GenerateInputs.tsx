@@ -1,10 +1,8 @@
 // App imports
+import { storage } from 'uxp';
+import * as xlsx from 'xlsx';
 import React from 'react';
 import Spectrum from 'react-uxp-spectrum';
-
-import { storage } from 'uxp';
-
-import * as xlsx from 'xlsx';
 import type { Document } from 'photoshop/dom/Document';
 
 type OutputType = keyof Document['saveAs'];

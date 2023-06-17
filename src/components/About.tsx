@@ -1,8 +1,7 @@
 import os from 'os';
-import React from "react";
 import { versions } from "uxp";
+import React from "react";
 import Spectrum from 'react-uxp-spectrum';
-
 import "./About.css";
 
 interface Props {

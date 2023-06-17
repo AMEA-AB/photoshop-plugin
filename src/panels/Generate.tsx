@@ -1,15 +1,13 @@
-// App imports
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Spectrum from 'react-uxp-spectrum';
-
 import { storage } from 'uxp';
 import { core } from 'photoshop';
-
-import './Generate.css';
 import AmeaService from '@services/amea-service';
-import type { Document } from 'photoshop/dom/Document';
+import PhotoshopService from '@services/photoshop-service';
 import GenerateInputs from '@components/GenerateInputs';
+import './Generate.css';
+import type { Document } from 'photoshop/dom/Document';
 
 type OutputType = keyof Document['saveAs'];
 
@@ -40,6 +38,7 @@ export default function App() {
             } catch (error) {
                 console.error(error);
                 failedRows.push(row.filename);
+                await PhotoshopService.closeDocument();
             }
         }
         executionContext.reportProgress({value: 1});
