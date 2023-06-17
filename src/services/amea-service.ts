@@ -1,5 +1,5 @@
 import { storage } from 'uxp';
-import { app, core, constants } from 'photoshop';
+import { app, constants } from 'photoshop';
 
 import DownloadService from '@services/download-service';
 import PhotoshopService from '@services/photoshop-service';
@@ -43,14 +43,14 @@ class AmeaService {
       const layer = app.activeDocument.layers.getByName(columnName);
       if (!layer) continue;
       if (layer.kind === constants.LayerKind.TEXT) {
-        await core.executeAsModal(() => PhotoshopService.setText(layer, row[columnName]), { commandName: `Change text for '${columnName}'` });
+        await PhotoshopService.setText(layer, row[columnName]);
       }
       else if (layer.kind === constants.LayerKind.SMARTOBJECT) {
         const fileURL = row[columnName];
         const filenameRegex = /.*\/(.*)/g;
         const filename = filenameRegex.exec(fileURL)[1];
         const file = await DownloadService.getFileFromWeb(fileURL, filename);
-        core.executeAsModal(() => PhotoshopService.setImage(layer, file), { commandName: `Change image for '${columnName}'` });
+        await PhotoshopService.setImage(layer, file);
       }
     }
   }
@@ -59,19 +59,19 @@ class AmeaService {
     // Invert colors
     const invert = row['Invert'] === 'true';
     for (const layer of app.activeDocument.layers) {
-      await core.executeAsModal(() => PhotoshopService.invertLayer(layer, invert), { commandName: 'Inverting colors' });
+      await PhotoshopService.invertLayer(layer, invert);
     }
 
     // Mirror document
     const mirror = row['Mirror'] === 'true';
     if (mirror) {
-      await core.executeAsModal(() => PhotoshopService.mirrorDocument(app.activeDocument), { commandName: 'Mirroring document' });
+      await PhotoshopService.mirrorDocument(app.activeDocument);
     }
   }
 
   private static async exportDocument(outputFolder: storage.Folder, filename: string, outputType: OutputType = 'png') {
     const outputFile = await outputFolder.createFile(filename, { overwrite: true });
-    await core.executeAsModal(() => app.activeDocument.saveAs[outputType](outputFile as unknown as File), { commandName: 'Exporting file' })
+    await app.activeDocument.saveAs[outputType](outputFile as unknown as File);
   }
 
   public static async generateImageFromRow(row: DataRow, templatesFolder: storage.Folder, outputFolder: storage.Folder, filename: string, outputType: OutputType = 'png') {

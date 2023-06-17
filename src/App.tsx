@@ -18,19 +18,20 @@ export default function App() {
     const [templatesFolder, setTemplatesFolder] = React.useState<storage.Folder | undefined>(undefined);
     const [outputType, setOutputType] = React.useState<OutputType>('png');
 
-    const handleGenerate = async () => {
+    const handleGenerate = () => core.executeAsModal(async (executionContext) => {
         const templates = rows.map((row) => row.Template).filter((value, index, self) => self.indexOf(value) === index);
 
         if (!templatesFolder) {
-            for (const template of templates) {
+            for (const [index, template] of templates.entries()) {
+                executionContext.reportProgress({value: index / templates.length, commandName: 'Downloading templates'});
                 await AmeaService.downloadTemplateFile(template);
                 console.log('Template downloaded', templatesFolder);
             }
         }
-
         const tempFolder = await storage.localFileSystem.getTemporaryFolder();
         let proccessedRows = 0;
-        for (const row of AmeaService.mapFilenames(rows)) {
+        for (const [index, row] of AmeaService.mapFilenames(rows).entries()) {
+            executionContext.reportProgress({value: index / rows.length, commandName: `Generating image for ${row['Order number']}`});
             try {
                 await AmeaService.generateImageFromRow(row, templatesFolder ?? tempFolder, outputFolder, row.filename, outputType);
                 proccessedRows += 1;
@@ -39,8 +40,9 @@ export default function App() {
                 await core.showAlert({ message: `Error while processing ${row['Order number']}` });
             }
         }
+        executionContext.reportProgress({value: 1});
         await core.showAlert({ message: `${proccessedRows} row${proccessedRows > 1 ? 's have' : ' has'}  been processed` });
-    }
+    }, {commandName: 'Generate templates'});
 
     return (
         <div className="panel">
