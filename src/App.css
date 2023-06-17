@@ -20,3 +20,7 @@ dialog {
 sp-divider {
     margin: 10px 0;
 }
+
+footer {
+    justify-content: flex-start;
+}

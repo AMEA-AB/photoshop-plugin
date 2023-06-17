@@ -7,12 +7,11 @@ import { app, core, constants } from 'photoshop';
 
 import * as xlsx from 'xlsx';
 
-import { replaceAllInString } from '@helpers';
 import './App.css';
 import AmeaService from '@services/amea-service';
 import PhotoshopService from '@services/photoshop-service';
 import DownloadService from '@services/download-service';
-import { Document } from 'photoshop/dom/Document';
+import type { Document } from 'photoshop/dom/Document';
 
 type OutputType = keyof Document['saveAs'];
 
@@ -25,7 +24,6 @@ export default function App() {
     const handleSelectInputFile = async () => {
         const file = await storage.localFileSystem.getFileForOpening({ types: ['xlsx'], allowMultiple: false });
         if (!file || Array.isArray(file)) {
-            await core.showAlert({ message: 'Please select an input file' });
             return;
         }
         const data = await file.read({ format: storage.formats.binary });
@@ -39,7 +37,6 @@ export default function App() {
     const handleSelectOutputFolder = async () => {
         const folder = await storage.localFileSystem.getFolder({ initialDomain: storage.domains.userDesktop });
         if (!folder) {
-            await core.showAlert({ message: 'Please select a folder for outputs' });
             return;
         }
         setOutputFolder(folder);
