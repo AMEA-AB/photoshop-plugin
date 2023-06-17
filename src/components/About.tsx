@@ -37,21 +37,12 @@ export const About = (props: Props) => {
           <Spectrum.Body>{versions.uxp}</Spectrum.Body>
         </div>
       </div>
-      <div>
-        <Spectrum.Button
-          variant="secondary"
-          quiet={true}
-          onClick={() => props.dialog.close("reasonCanceled")}
-        >
-          Cancel
-        </Spectrum.Button>
-        <Spectrum.Button
-          variant="primary"
-          onClick={() => props.dialog.close("ok")}
-        >
-          OK
-        </Spectrum.Button>
-      </div>
+      <Spectrum.Button
+        variant="primary"
+        onClick={() => props.dialog.close("ok")}
+      >
+        OK
+      </Spectrum.Button>
     </form>
   );
 };

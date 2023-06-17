@@ -31,6 +31,7 @@ export default function App() {
         }
         const tempFolder = await storage.localFileSystem.getTemporaryFolder();
         let proccessedRows = 0;
+        const failedRows: string[] = [];
         for (const [index, row] of AmeaService.mapFilenames(rows).entries()) {
             executionContext.reportProgress({value: index / rows.length, commandName: `Generating image for ${row['Order number']}`});
             try {
@@ -38,23 +39,30 @@ export default function App() {
                 proccessedRows += 1;
             } catch (error) {
                 console.error(error);
-                // await core.showAlert({ message: `Error while processing ${row['Order number']}` });
+                failedRows.push(row.filename);
             }
         }
         executionContext.reportProgress({value: 1});
-        showCompleteDialog(rows.length, proccessedRows);
+        showCompleteDialog(rows.length, failedRows);
     }, {commandName: 'Generate templates'});
 
-    const showCompleteDialog = (total: number, proccessed: number) => {
+    const showCompleteDialog = (total: number, failedRows: string[]) => {
+        const failed = failedRows.length;
         const dialogElement = document.createElement('dialog');
         document.appendChild(dialogElement);
         const root = createRoot(dialogElement);
         root.render(
           <div className="panel">
-            <Spectrum.Heading size="M">Generated</Spectrum.Heading>
-            {proccessed < total ? <Spectrum.Heading size="M">{total - proccessed} files failed</Spectrum.Heading> : undefined}
-            <Spectrum.Body>{proccessed} files got generated</Spectrum.Body>
-            <Spectrum.Detail>Great work. 🚀</Spectrum.Detail>
+            <Spectrum.Heading size="M">{total - failed} files got generated</Spectrum.Heading>
+            {failed > 0 ? (
+                <Spectrum.Body>
+                    <Spectrum.Divider size="medium" />
+                    <Spectrum.Heading size="S">{failed} files failed</Spectrum.Heading>
+                    <ul>
+                        {failedRows.map((failedRow) => <li key={failedRow}>{failedRow}</li>)}
+                    </ul>
+                </Spectrum.Body>
+            ) : <Spectrum.Detail>Great work. 🚀</Spectrum.Detail>}
           </div>
         );
         dialogElement.addEventListener('close', () => {

@@ -37,7 +37,7 @@ export class PanelController {
             checked: menuItem.checked || false
         }));
 
-        ["create", "show", "hide", "destroy", "invokeMenu"].forEach(fn => this[fn] = this[fn].bind(this));
+        ["create", "show", "hide", "invokeMenu"].forEach(fn => this[fn] = this[fn].bind(this));
     }
 
     create() {
