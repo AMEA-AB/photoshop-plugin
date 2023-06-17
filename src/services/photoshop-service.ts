@@ -6,15 +6,11 @@ import type { Document } from 'photoshop/dom/Document';
 
 class PhotoShopService {
   public static openPhotoshopFile(file: storage.File) {
-    return core.executeAsModal(async () => {
-      await app.open(file as unknown as File)
-    }, { commandName: 'Opening file' });
+    return app.open(file as unknown as File);
   }
 
   public static closeDocument(saveOptions: SaveOptions = constants.SaveOptions.DONOTSAVECHANGES) {
-    return core.executeAsModal(async () => {
-      await app.activeDocument.close(saveOptions)
-    }, { commandName: 'Closing document' });
+    return app.activeDocument.close(saveOptions);
   }
 
   public static invertLayer(layer: Layer, invert: boolean) {
