@@ -25,7 +25,8 @@ module.exports = function (_env, argv) {
             extensions: ['.ts', '.tsx', '.js', 'jsx', '.css'],
             alias: {
                 "@services": path.resolve(__dirname, "src/services/"),
-                "@helpers": path.resolve(__dirname, "src/helpers")
+                "@helpers": path.resolve(__dirname, "src/helpers"),
+                "@components": path.resolve(__dirname, "src/components/")
             } 
         },
         module: {

@@ -21,6 +21,7 @@
         "paths": {
           "@services/*": ["services/*"],
           "@helpers": ["helpers"],
+          "@components/*": ["components/*"],
         }
     },
     "exclude": [

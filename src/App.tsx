@@ -5,13 +5,12 @@ import Spectrum from 'react-uxp-spectrum';
 import { storage } from 'uxp';
 import { app, core, constants } from 'photoshop';
 
-import * as xlsx from 'xlsx';
-
 import './App.css';
 import AmeaService from '@services/amea-service';
 import PhotoshopService from '@services/photoshop-service';
 import DownloadService from '@services/download-service';
 import type { Document } from 'photoshop/dom/Document';
+import GenerateInputs from '@components/GenerateInputs';
 
 type OutputType = keyof Document['saveAs'];
 
@@ -20,33 +19,6 @@ export default function App() {
     const [outputFolder, setOutputFolder] = React.useState<storage.Folder | undefined>(undefined);
     const [templatesFolder, setTemplatesFolder] = React.useState<storage.Folder | undefined>(undefined);
     const [outputType, setOutputType] = React.useState<OutputType>('png');
-
-    const handleSelectInputFile = async () => {
-        const file = await storage.localFileSystem.getFileForOpening({ types: ['xlsx'], allowMultiple: false });
-        if (!file || Array.isArray(file)) {
-            return;
-        }
-        const data = await file.read({ format: storage.formats.binary });
-        const workbook = xlsx.read(data);
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-        const rows = (xlsx.utils.sheet_to_json(worksheet) as DataRow[]).filter((row) => row.Template);
-        setRows(rows);
-    };
-
-    const handleSelectOutputFolder = async () => {
-        const folder = await storage.localFileSystem.getFolder({ initialDomain: storage.domains.userDesktop });
-        if (!folder) {
-            return;
-        }
-        setOutputFolder(folder);
-    };
-
-    const handleSelectTemplatesFolder = async () => {
-        const folder = await storage.localFileSystem.getFolder({ initialDomain: storage.domains.userDesktop });
-        if (!folder) return;
-        setTemplatesFolder(folder);
-    };
 
     const populateDocumentFromRow = async (row: DataRow) => {
         for (const columnName of Object.keys(row)) {
@@ -123,31 +95,14 @@ export default function App() {
             <Spectrum.Detail>Generate images from templates based on data from a xlsx-file</Spectrum.Detail>
             <Spectrum.Divider size="medium" />
             <Spectrum.Body>
-                <div className="button-container">
-                    <Spectrum.Button variant={rows ? 'primary' : 'warning'} onClick={() => handleSelectInputFile()}>
-                        Select input (xlsx-file)
-                    </Spectrum.Button>
-                </div>
-                <div className="button-container">
-                    <Spectrum.Button variant={outputFolder ? 'primary' : 'warning'} onClick={() => handleSelectOutputFolder()}>
-                        Select output folder
-                    </Spectrum.Button>
-                </div>
-                <div className="button-container">
-                    <Spectrum.Button variant="secondary" onClick={() => handleSelectTemplatesFolder()}>
-                        Select local templates folder
-                    </Spectrum.Button>
-                    <Spectrum.Detail>
-                        Select a local folder if you don&apos;t want to use templates in the cloud.
-                    </Spectrum.Detail>
-                </div>
-                <Spectrum.RadioGroup onChange={(e) => setOutputType(e.target.value as 'png' | 'psd')}>
-                    <Spectrum.Label slot="label">Output filetype</Spectrum.Label>
-                    <Spectrum.Radio checked value="png">
-                        PNG
-                    </Spectrum.Radio>
-                    <Spectrum.Radio value="psd">PSD</Spectrum.Radio>
-                </Spectrum.RadioGroup>
+                <GenerateInputs
+                    rows={rows}
+                    outputFolder={outputFolder}
+                    onRowsChange={(rows) => setRows(rows)}
+                    onOutputFolderChange={(folder) => setOutputFolder(folder)}
+                    onOutputTypeChange={(type) => setOutputType(type)}
+                    onTemplatesFolderChange={(folder) => setTemplatesFolder(folder)}
+                />
             </Spectrum.Body>
             <footer>
                 <Spectrum.Button variant="cta" disabled={!rows || !outputFolder} onClick={() => handleGenerate()}>
