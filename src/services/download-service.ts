@@ -1,13 +1,13 @@
 import { storage } from 'uxp';
 
 class DownloadService {
-  static async fetchBuffer(url: string) {
+  private static async fetchBuffer(url: string) {
     const response = await fetch(url);
     if (response.status !== 200) throw Error(`Could not download file from ${url}`);
     return response.arrayBuffer();
   }
 
-  static async getFileFromWeb(url: string, filename: string) {
+  public static async getFileFromWeb(url: string, filename: string) {
     const tempFolder = await storage.localFileSystem.getTemporaryFolder();
     const file = await tempFolder.createFile(filename, { overwrite: true });
     console.log('Downloading file', url);

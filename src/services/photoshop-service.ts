@@ -6,19 +6,19 @@ import type { Document } from 'photoshop/dom/Document';
 import { SaveOptions } from 'photoshop/dom/Constants';
 
 class PhotoShopService {
-  static openPhotoshopFile(file: storage.File) {
+  public static openPhotoshopFile(file: storage.File) {
     return core.executeAsModal(async () => {
       await app.open(file as unknown as File)
     }, { commandName: 'Opening file' });
   }
 
-  static closeDocument(saveOptions: SaveOptions = constants.SaveOptions.DONOTSAVECHANGES) {
+  public static closeDocument(saveOptions: SaveOptions = constants.SaveOptions.DONOTSAVECHANGES) {
     return core.executeAsModal(async () => {
       await app.activeDocument.close(saveOptions)
     }, { commandName: 'Closing document' });
   }
 
-  static invertLayer(layer: Layer, invert: boolean) {
+  public static invertLayer(layer: Layer, invert: boolean) {
     return action.batchPlay(
       [
         {
@@ -43,7 +43,7 @@ class PhotoShopService {
     );
   }
 
-  static hideLayer(layer: Layer, hide: boolean) {
+  public static hideLayer(layer: Layer, hide: boolean) {
     return action.batchPlay(
       [
         {
@@ -60,7 +60,7 @@ class PhotoShopService {
     );
   }
 
-  static mirrorDocument(document: Document) {
+  public static mirrorDocument(document: Document) {
     return action.batchPlay(
       [
         {
@@ -81,7 +81,7 @@ class PhotoShopService {
     );
   }
 
-  static setImage(layer: Layer, image: storage.File) {
+  public static setImage(layer: Layer, image: storage.File) {
     const targetWidth = layer.bounds.width;
     const targetHeight = layer.bounds.height;
 
@@ -117,7 +117,7 @@ class PhotoShopService {
       });
   }
 
-  static setText(layer: Layer, text: string) {
+  public static setText(layer: Layer, text: string) {
     if (text) {
       return action.batchPlay(
         [

@@ -12,21 +12,15 @@ import './App.css';
 import AmeaService from '@services/amea-service';
 import PhotoshopService from '@services/photoshop-service';
 import DownloadService from '@services/download-service';
+import { Document } from 'photoshop/dom/Document';
 
-interface DataRow {
-    Template: string;
-    'Order number': string;
-    Product: string;
-    [key: string]: string;
-}
-
-type outputType = 'png' | 'psd';
+type OutputType = keyof Document['saveAs'];
 
 export default function App() {
     const [rows, setRows] = React.useState<DataRow[] | undefined>(undefined);
     const [outputFolder, setOutputFolder] = React.useState<storage.Folder | undefined>(undefined);
     const [templatesFolder, setTemplatesFolder] = React.useState<storage.Folder | undefined>(undefined);
-    const [outputType, setOutputType] = React.useState<outputType>('png');
+    const [outputType, setOutputType] = React.useState<OutputType>('png');
 
     const handleSelectInputFile = async () => {
         const file = await storage.localFileSystem.getFileForOpening({ types: ['xlsx'], allowMultiple: false });
@@ -88,12 +82,12 @@ export default function App() {
         }
     }
 
-    const exportDocument = async (outputFolder: storage.Folder, filename: string, outputType: outputType = 'png') => {
+    const exportDocument = async (outputFolder: storage.Folder, filename: string, outputType: OutputType = 'png') => {
         const outputFile = await outputFolder.createFile(filename, { overwrite: true });
         await core.executeAsModal(() => app.activeDocument.saveAs[outputType](outputFile as unknown as File), { commandName: 'Exporting file' })
     }
 
-    const generateImageFromRow = async (row: DataRow, templatesFolder: storage.Folder, outputFolder: storage.Folder, filename: string, outputType: outputType = 'png') => {
+    const generateImageFromRow = async (row: DataRow, templatesFolder: storage.Folder, outputFolder: storage.Folder, filename: string, outputType: OutputType = 'png') => {
         const templateFile = await templatesFolder.getEntry(row.Template) as storage.File;
         await PhotoshopService.openPhotoshopFile(templateFile);
         await populateDocumentFromRow(row);
@@ -105,22 +99,18 @@ export default function App() {
     const handleGenerate = async () => {
         const templates = rows.map((row) => row.Template).filter((value, index, self) => self.indexOf(value) === index);
 
-        const tempFolder = await storage.localFileSystem.getTemporaryFolder();
         if (!templatesFolder) {
             for (const template of templates) {
-                await AmeaService.downloadTemplateFile(template, tempFolder);
+                await AmeaService.downloadTemplateFile(template);
                 console.log('Template downloaded', templatesFolder);
             }
-            setTemplatesFolder(tempFolder);
         }
 
+        const tempFolder = await storage.localFileSystem.getTemporaryFolder();
         let proccessedRows = 0;
-        for (const row of rows) {
-            const order_number = replaceAllInString(row['Order number'], '#', '');
-            const product = replaceAllInString(replaceAllInString(row['Product'], '*', '-'), '/', '-');
-            const filename = `${order_number} - ${product}`;
+        for (const row of AmeaService.mapFilenames(rows)) {
             try {
-                await generateImageFromRow(row, templatesFolder ?? tempFolder, outputFolder, filename, outputType);
+                await generateImageFromRow(row, templatesFolder ?? tempFolder, outputFolder, row.filename, outputType);
                 proccessedRows += 1;
             } catch (error) {
                 console.error(error);
