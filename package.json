@@ -8,6 +8,7 @@
     },
     "scripts": {
         "build": "webpack --mode production --config webpack.config.js",
+        "build:dev": "webpack --mode development --config webpack.config.js",
         "watch": "webpack --mode development --watch --config webpack.config.js"
     },
     "devDependencies": {

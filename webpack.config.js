@@ -3,6 +3,14 @@ const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
+let package = require('./package.json');
+
+function setVersionNumber(buffer, isDevelopment = false) {
+   var manifest = JSON.parse(buffer.toString());
+   manifest.version = package.version;
+   return isDevelopment ? JSON.stringify(manifest, null, 4) : JSON.stringify(manifest);
+}
+
 module.exports = function (_env, argv) {
     const isProduction = argv.mode === 'production';
     const isDevelopment = !isProduction;
@@ -62,8 +70,13 @@ module.exports = function (_env, argv) {
             new CopyPlugin({
                 patterns: [
                     {
-                        from: 'plugin',
+                        from: 'plugin/manifest.json',
+                        to: 'manifest.json',
+                        transform: (content, _path) => setVersionNumber(content, isDevelopment),
                     },
+                    {
+                        from: 'plugin',
+                    }
                 ],
             }),
         ],
