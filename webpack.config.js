@@ -5,10 +5,10 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 let package = require('./package.json');
 
-function setVersionNumber(buffer, isDevelopment = false) {
+function setVersionNumber(buffer) {
    var manifest = JSON.parse(buffer.toString());
    manifest.version = package.version;
-   return isDevelopment ? JSON.stringify(manifest, null, 4) : JSON.stringify(manifest);
+   return JSON.stringify(manifest, null, 4);
 }
 
 module.exports = function (_env, argv) {
@@ -72,7 +72,7 @@ module.exports = function (_env, argv) {
                     {
                         from: 'plugin/manifest.json',
                         to: 'manifest.json',
-                        transform: (content, _path) => setVersionNumber(content, isDevelopment),
+                        transform: (content, _path) => setVersionNumber(content),
                     },
                     {
                         from: 'plugin',
