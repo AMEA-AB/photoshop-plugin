@@ -64,7 +64,7 @@ module.exports = function (_env, argv) {
         },
         plugins: [
             new Dotenv({
-                safe: true,
+                safe: isDevelopment,
             }),
             new CleanWebpackPlugin(),
             new CopyPlugin({
