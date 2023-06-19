@@ -2,12 +2,10 @@
     "name": "AMEA",
     "id": "com.amea.template",
     "main": "index.html",
-    "host": [
-        {
-            "app": "PS",
-            "minVersion": "23.0.0"
-        }
-    ],
+    "host": {
+        "app": "PS",
+        "minVersion": "23.0.0"
+    },
     "requiredPermissions": {
         "localFileSystem": "request"
     },
