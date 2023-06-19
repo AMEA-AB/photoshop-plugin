@@ -30,7 +30,7 @@ jobs:
       uses: montudor/action-zip@v1
     
     - name: Pack plugn
-      run: zip -qq -r plugin.ccx *
+      run: zip -qq -r ../plugin.ccx *
       working-directory: dist
 
     - name: Release
