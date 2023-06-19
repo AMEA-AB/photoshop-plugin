@@ -39,18 +39,23 @@ class AmeaService {
   }
 
   private static async populateDocumentFromRow(row: DataRow) {
-    for (const columnName of Object.keys(row)) {
-      const layer = app.activeDocument.layers.getByName(columnName);
-      if (!layer) continue;
-      if (layer.kind === constants.LayerKind.TEXT) {
-        await PhotoshopService.setText(layer, row[columnName]);
-      }
-      else if (layer.kind === constants.LayerKind.SMARTOBJECT) {
-        const fileURL = row[columnName];
-        const filenameRegex = /.*\/(.*)/g;
-        const filename = filenameRegex.exec(fileURL)[1];
-        const file = await DownloadService.getFileFromWeb(fileURL, filename);
-        await PhotoshopService.setImage(layer, file);
+    const layers = app.activeDocument.layers.filter((layer) => !layer.pixelsLocked);
+    for(const layer of layers){
+      if(layer.allLocked || !layer.visible) continue;
+      const data = row[layer.name];
+      console.log(data, layer);
+      if(!data || data === '') {
+        await PhotoshopService.hideLayer(layer, true);
+      } else {
+        if (layer.kind === constants.LayerKind.TEXT) {
+          await PhotoshopService.setText(layer, data);
+        } else if (layer.kind === constants.LayerKind.SMARTOBJECT) {
+          const fileURL = data;
+          const filenameRegex = /.*\/(.*)/g;
+          const filename = filenameRegex.exec(fileURL)[1];
+          const file = await DownloadService.getFileFromWeb(fileURL, filename);
+          await PhotoshopService.setImage(layer, file);
+        }
       }
     }
   }

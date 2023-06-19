@@ -16,11 +16,11 @@ const aboutController = new CommandController(
         size: { width: 480, height: 480 },
     }
 );
-const demosController = new PanelController(() => <Generate />, {
-    id: "demos",
+const generateController = new PanelController(() => <Generate />, {
+    id: "generate",
     menuItems: [
         {
-            id: "dialog1",
+            id: "showAbout",
             label: "About AMEA Plugin",
             enabled: true,
             checked: false,
@@ -42,6 +42,6 @@ entrypoints.setup({
         showAbout: aboutController,
     },
     panels: {
-        generate: demosController
+        generate: generateController
     },
 });

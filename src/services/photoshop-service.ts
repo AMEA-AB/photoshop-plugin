@@ -1,5 +1,5 @@
 import { storage } from 'uxp';
-import { action, app, constants, core } from 'photoshop';
+import { action, app, constants } from 'photoshop';
 import type { SaveOptions } from 'photoshop/dom/Constants';
 import type { Layer } from "photoshop/dom/Layer";
 import type { Document } from 'photoshop/dom/Document';
