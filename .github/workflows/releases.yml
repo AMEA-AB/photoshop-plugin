@@ -14,19 +14,25 @@ jobs:
       contents: write
     steps:
     - uses: actions/checkout@v3
+
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
         node-version: 18
+
     - name: Install dependencies
       run: yarn install
+
     - name: Build plugin
       run: yarn build
+
+    - name: Install zip
+      uses: montudor/action-zip@v1
+    
     - name: Pack plugn
-      uses: montudor/action-zip@v1.0.0
-      with:
-        args: zip -qq -r plugin.ccx *
-        working-directory: dist
+      run: zip -qq -r plugin.ccx *
+      working-directory: dist
+
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
