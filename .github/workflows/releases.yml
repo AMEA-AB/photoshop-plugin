@@ -32,6 +32,16 @@ jobs:
     - name: Pack plugn
       run: zip -qq -r ../plugin.ccx *
       working-directory: dist
+      
+    - name: Send release mail
+      uses: dawidd6/action-send-mail@v3
+      with:
+        connection_url: ${{secrets.MAIL_CONNECTION}}
+        subject: New version of AMEA Photoshop Plugin
+        to: ${{secrets.MAIL_RECIPIENTS}}
+        from: AMEA Photoshop Plugin
+        body: There is anew version of AMEA Photoshop Plugin. Make sure to check it out!
+        attachments: plugin.ccx
 
     - name: Release
       uses: softprops/action-gh-release@v1
