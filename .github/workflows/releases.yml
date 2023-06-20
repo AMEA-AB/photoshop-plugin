@@ -36,7 +36,7 @@ jobs:
     - name: Send release mail
       uses: dawidd6/action-send-mail@v3
       with:
-        connection_url: ${{secrets.MAIL_CONNECTION}}
+        connection_url: ${{secrets.SMTP_CONNECTION_URL}}
         subject: New version of AMEA Photoshop Plugin
         to: ${{secrets.MAIL_RECIPIENTS}}
         from: AMEA Photoshop Plugin
